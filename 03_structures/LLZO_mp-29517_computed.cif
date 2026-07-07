@@ -1,0 +1,19 @@
+
+data_Li7La3Zr2O12
+_symmetry_space_group_name_H-M   'I a -3 d'
+_cell_length_a   12.98
+_cell_length_b   12.98
+_cell_length_c   12.98
+_cell_angle_alpha   90
+_cell_angle_beta   90
+_cell_angle_gamma   90
+loop_
+_atom_site_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Li1  0.125  0.500  0.750  1.0
+La1  0.125  0.250  0.375  1.0
+Zr1  0.000  0.000  0.000  1.0
+O1   0.105  0.190  0.795  1.0

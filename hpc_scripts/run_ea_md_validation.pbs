@@ -1,0 +1,31 @@
+#!/bin/bash
+#PBS -N ea_md_validation
+#PBS -l nodes=1:ppn=16
+#PBS -l mem=128gb
+#PBS -l walltime=48:00:00
+#PBS -j oe
+#PBS -o ea_md_validation.log
+
+echo "=== Earth Abundant MD Validation Job Started ==="
+echo "Node: $(hostname)"
+echo "Date: $(date)"
+
+# Load modules
+module load python/3.10
+module load cuda/11.8      # GPU will speed up CHGNet 10-50x
+
+# Navigate to project root
+cd /path/to/doped_2        # <<< CHANGE THIS to your HPC project path
+
+# Activate virtual environment
+source venv/bin/activate   # <<< CHANGE THIS to your venv path
+
+echo "Running ea_step6_md_validation.py..."
+python earth_abundant/scripts/ea_step6_md_validation.py
+
+# After success, copy results to final output
+echo "Copying results to FINAL_Results/Earth_Abundant_Pipeline..."
+mkdir -p FINAL_Results/Earth_Abundant_Pipeline
+cp earth_abundant/data/results/ea_finalresults.csv FINAL_Results/Earth_Abundant_Pipeline/ea_finalresults.csv
+
+echo "=== Job Finished at $(date) ==="

@@ -1,0 +1,2 @@
+formula,pair,Li_pfu,gpr_sigma_RT_S_cm,gpr_sigma_err_S_cm,conductivity_order,cross_model_ok,thermal_stability,is_novel
+Li6.500Zn0.10La3Zr1.70Nb0.30O12,Zn+Nb,6.5,0.0005847615392312247,0.000997165571464458,ORDER: 10^-4,,STABLE (lower E than LLZO),True

@@ -1,0 +1,2 @@
+formula,pair,Li_pfu,Li_site,Li_conc,Zr_site,Zr_conc,is_novel,chgnet_static_E_per_atom,chgnet_static_V_per_atom,chgnet_eval_E_per_atom,chgnet_eval_V_per_atom,was_relaxed,m3gnet_E_per_atom,delta_E_models,cross_model_ok,delta_E_vs_LLZO,thermal_stability,gpr_sigma_RT_S_cm,gpr_sigma_err_S_cm,conductivity_order
+Li6.500Zn0.10La3Zr1.70Nb0.30O12,Zn+Nb,6.5,Zn,0.1,Nb,0.3,True,17.96668815612793,9.426187896551726,11.288503646850586,7.896978798824268,True,,,,-6.11186,STABLE (lower E than LLZO),0.0005847615392312247,0.000997165571464458,ORDER: 10^-4

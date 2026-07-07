@@ -1,0 +1,14 @@
+Formula,Dopant_Type,Sigma_RT_S_cm,Ea_eV,Sinter_Temp_C,Sinter_Time,Atmosphere,Density_Percent,GB_vs_Bulk_Conductivity,Source_DOI
+Li6.55Al0.15La3Zr2O12,Al (Li-site),1.184e-04,N/A,1150,21h,N/A,92.5,N/A,10.1088/2053-1591/ac672e
+Li6.5La3Zr1.5Nb0.5O12,Nb (Zr-site),1.05e-03,0.297,950+1160,12h+24h,N/A,95.7,N/A,10.1007/s10853-025-11031-0
+Li6.76Al0.24La2.93Gd0.07Zr2O12,Al+Gd (Li-site + La-site),2.62e-05,N/A,N/A,N/A,N/A,N/A,GB_R=7438ohm,10.1016/j.ceramint.2025.03.443
+Li6.76Al0.24La2.72Gd0.28Zr2O12,Al+Gd (Li-site + La-site),2.19e-04,N/A,N/A,N/A,N/A,N/A,GB_R=842ohm,10.1016/j.ceramint.2025.03.443
+Li6.76Al0.24La2.65Gd0.35Zr2O12,Al+Gd (Li-site + La-site),N/A,N/A,N/A,N/A,N/A,N/A,N/A,10.1016/j.ceramint.2025.03.443
+Nb-doped LLZO (optimum x),Nb (Zr-site),N/A,N/A,1200,2h,N/A,N/A,N/A,10.1007/s10008-025-06387-x
+Li6.6La2.8Mg0.2Zr1.4Ta0.6O12,Mg+Ta (La-site + Zr-site),4.31e-04,N/A,N/A,N/A,N/A,92.6,N/A,10.1002/adsu.202300656
+Li6.65Ga0.15La3Zr1.9In0.1O12,Ga+In (Li-site + Zr-site),1.50e-04,0.268,N/A,N/A,N/A,N/A,N/A,10.1016/j.matchemphys.2023.128851
+Li7La3Zr1.6Ru0.4O12,Ru+Ga (Zr-site; Ga stabiliser),2.56e-04,N/A,N/A,N/A,N/A,N/A,N/A,10.1080/10667857.2016.1196033
+Al-doped LLZO (0.3mol Al),Al (Li-site),2.11e-04,N/A,900,N/A,N/A,N/A,N/A,10.1016/j.ceramint.2016.04.149
+AlGaTa-LLZO (triple-doped 1.1xLi),Al+Ga+Ta (Li-site + Zr-site),3.60e-04,N/A,N/A,40min,N/A,97.8,N/A,10.3390/nano12172946
+In-doped LLZO-LZO thin film,In,9.60e-06,N/A,800 (anneal),N/A,N/A,N/A,N/A,10.3390/cryst11040426
+Li6.65La2.95Sr0.05Zr1.8Mo0.2O12,Sr+Mo (La-site + Zr-site),6.43e-04,N/A,1100,N/A,N/A,95.0,N/A,10.1016/j.jallcom.2021.161906

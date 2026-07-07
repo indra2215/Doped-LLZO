@@ -1,0 +1,2 @@
+formula,pair,Li_pfu,chgnet_eval_E_per_atom,delta_E_vs_LLZO,thermal_stability,is_novel
+Li6.500Zn0.10La3Zr1.70Nb0.30O12,Zn+Nb,6.5,11.288503646850586,-6.11186,STABLE (lower E than LLZO),True

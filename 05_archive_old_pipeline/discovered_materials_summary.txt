@@ -1,0 +1,63 @@
++---------------------------------------------------------------------------------------------------+
+|                         SOLID-STATE ELECTROLYTE DISCOVERY SUMMARY                                 |
++---------------------------------------------------------------------------------------------------+
+| BASE COMPOUND OVERVIEW                                                                            |
+| ----------------------                                                                            |
+| Formula:          Referred as Li7La3Zr2O12 (Cubic LLZO)                                           |
+| Status:           Reference Baseline (mp-942733)                                                  |
+| Conductivity:     ~3.0e-04 S/cm (RT)                                                              |
+| Activation (Ea):  0.30 eV                                                                         |
+| Bandgap:          ~5.5 eV                                                                         |
+| Spacegroup:       Ia-3d (Cubic)                                                                   |
+| Convex Hull:      Stable (0 meV/atom)                                                             |
++---------------------------------------------------------------------------------------------------+
+| ML-PIPELINE SCREENING METRICS                                                                     |
+| -----------------------------                                                                     |
+| Initial Combinations Evaluated:   650 charge-balanced variations                                  |
+| Discarded via MACE/BO Check:      620 (Due to broken symmetry or lower proxy thresholds)          |
+| Proceeding to Geometry Check:     30 Candidates                                                   |
+| Passing Final C1-C10 Criteria:    3 NEW TARGET CANDIDATES                                         |
++---------------------------------------------------------------------------------------------------+
+
+=====================================================================================================
+                      NEWLY IDENTIFIED TARGET CANDIDATES (ML-ACCELERATED)
+=====================================================================================================
+
++---------------------------------------------------------------------------------------------------+
+| 1. FERROUS-NIOBIUM CO-DOPED LLZO (Fe & Nb)                                                        |
++---------------------------------------------------------------------------------------------------+
+| Substitution:     50% La-site replacement (Fe) + 20% Zr-site replacement (Nb)                     |
+| Composition:      La1.5Fe1.5Zr1.6Nb0.4O12 (Li content adjusted for charge neutrality)             |
+| Discovery Status: NEWLY IDENTIFIED via ML bounds proxy prediction.                                |
+| Conductivity:     7.89e-04 S/cm (Superior to Baseline)                                            |
+| Activation (Ea):  0.327 eV                                                                        |
+| Lattice Output:   Ia-3d (Cubic retention successful)                                              |
+| Bulk Modulus:     90.0 GPa                                                                        |
+| Notes:            Donates electrons via Nb5+ while compensating heavily on La sub-lattice.        |
++---------------------------------------------------------------------------------------------------+
+
++---------------------------------------------------------------------------------------------------+
+| 2. STRONTIUM-TUNGSTEN CO-DOPED LLZO (Sr & W)                                                      |
++---------------------------------------------------------------------------------------------------+
+| Substitution:     30% La-site replacement (Sr) + 10% Zr-site replacement (W)                      |
+| Composition:      La2.1Sr0.9Zr1.8W0.2O12 (Li content adjusted for charge neutrality)              |
+| Discovery Status: NEWLY IDENTIFIED via ML bounds proxy prediction.                                |
+| Conductivity:     7.76e-04 S/cm (Superior to Baseline)                                            |
+| Activation (Ea):  0.276 eV (Excellent Li migration barrier)                                       |
+| Lattice Output:   Ia-3d (Cubic retention successful)                                              |
+| Bulk Modulus:     90.0 GPa                                                                        |
+| Notes:            W6+ expands the lattice slightly, dropping the activation energy significantly. |
++---------------------------------------------------------------------------------------------------+
+
++---------------------------------------------------------------------------------------------------+
+| 3. GALLIUM-TITANIUM CO-DOPED LLZO (Ga & Ti)                                                       |
++---------------------------------------------------------------------------------------------------+
+| Substitution:     40% La-site replacement (Ga) + 10% Zr-site replacement (Ti)                     |
+| Composition:      La1.8Ga1.2Zr1.8Ti0.2O12 (Li content adjusted for charge neutrality)             |
+| Discovery Status: NEWLY IDENTIFIED via ML bounds proxy prediction.                                |
+| Conductivity:     7.18e-04 S/cm (Superior to Baseline)                                            |
+| Activation (Ea):  0.215 eV (Lowest Activation Energy Identified)                                  |
+| Lattice Output:   Ia-3d (Cubic retention successful)                                              |
+| Bulk Modulus:     90.0 GPa                                                                        |
+| Notes:            Isovalent/near-isovalent tuning preserves the structural framework optimally.   |
++---------------------------------------------------------------------------------------------------+

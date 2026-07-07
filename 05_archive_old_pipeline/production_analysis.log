@@ -1,0 +1,9 @@
+--- PRODUCTION ANALYSIS LOG ---
+[2026-04-21 21:13:41.330469] RESULTS FOR Fe_Nb_doped:
+  Ea = 0.0623 eV
+  sigma_RT = 6.655e-01 S/cm
+
+[2026-04-21 21:32:06.835026] RESULTS FOR Sr_W_doped:
+  Ea = 0.0568 eV
+  sigma_RT = 4.968e-01 S/cm
+
