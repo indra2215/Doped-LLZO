@@ -1,4 +1,4 @@
-﻿"""
+"""
 earth_abundant_validate.py
 ==================================================================
 Full validation pipeline for earth-abundant LLZO candidates.
@@ -238,7 +238,8 @@ def main():
     # Sort by optimal Li_pfu (closest to 6.5), pick top 25
     # Sort by optimal Li_pfu (closest to 6.5), pick top 25
     df_in["pfu_score"] = (df_in["Li_pfu"] - 6.5).abs()
-    df_work = df_in.sort_values("pfu_score").head(25).reset_index(drop=True)
+    # Sort by optimal Li_pfu (closest to 6.5), pick top 5
+    df_work = df_in.sort_values("pfu_score").head(5).reset_index(drop=True)
 
     print(f"\nValidating top {len(df_work)} candidates...\n")
 

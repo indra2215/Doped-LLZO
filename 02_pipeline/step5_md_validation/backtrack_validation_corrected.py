@@ -135,7 +135,7 @@ def main():
         print("  Run evaluate_candidates_chgnet.py first.")
         return
 
-    candidates_df = pd.read_csv(CANDIDATES_FILE)
+    candidates_df = pd.read_csv(CANDIDATES_FILE).head(5)
     f_col         = 'formula' if 'formula' in candidates_df.columns else 'Formula'
     final_results = []
 

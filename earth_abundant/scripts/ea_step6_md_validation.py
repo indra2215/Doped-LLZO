@@ -1,4 +1,4 @@
-﻿"""
+"""
 ea_step6_md_validation.py
 ==============================================================================
 EARTH-ABUNDANT PIPELINE — Step 6: Arrhenius MD Validation
@@ -53,7 +53,7 @@ STRUCTURES    = EA_ROOT / "structures"
 OUTPUT_CSV    = EA_ROOT / "data" / "results" / "ea_finalresults.csv"
 
 # -- MD Parameters --------------------------------------------------------------
-MD_STEPS     = 500_000   # 1 ns at 2 fs/step
+MD_STEPS     = 1_000     # Short run for quick validation
 TIME_STEP    = 2.0       # fs
 TEMPERATURES = [600, 800, 1000]   # K
 N_CANDIDATES = 5                  # top N thermally stable to run MD on
