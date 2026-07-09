@@ -34,7 +34,7 @@ The project is now cleanly split into two self-contained workflows, ensuring dat
 
 ### Pipeline 1: Standard Pipeline (`02_pipeline/`)
 Focuses on maximum ionic conductivity using any physically sound dopants, including expensive/rare elements.
-- **Dopants:** Li-site (Al³⁺, Ga³⁺, Fe³⁺, Zn²⁺); Zr-site (Nb⁵⁺, Ta⁵⁺, Sb⁵⁺, W⁶⁺).
+- **Dopants:** Li-site (Al³⁺, Ga³⁺, Fe³⁺, Zn²⁺); La-site (Sr²⁺, Y³⁺, Gd³⁺, Ca²⁺, Ba²⁺); Zr-site (Nb⁵⁺, Ta⁵⁺, Sb⁵⁺, W⁶⁺).
 - **Execution:** Uses `run_standard_pipeline.ps1` to execute steps 1 through 5.
 - **Output:** `01_data/results/finalresults.csv`
 

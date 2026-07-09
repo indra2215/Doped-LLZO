@@ -22,7 +22,7 @@ The project recently underwent a major structural refactoring to cleanly separat
 > **Data Utilization Update:** The GPR surrogate model now uses `pymatgen` compositional features (e.g., electronegativity, mass, radius) rather than CHGNet structural features. This bypasses structural relaxation crashes and allows the model to train on **100% of the experimental dataset (679 points)**, pushing the cross-validated R² score from ~0.35 to **>0.60**.
 
 ### A. Standard Pipeline (`02_pipeline/`)
-- **Focus**: High-performance Li-site (Al, Ga, Fe, Zn) and Zr-site (Nb, Ta, Sb, W) co-doping.
+- **Focus**: High-performance Li-site (Al, Ga, Fe, Zn), La-site (Sr, Y, Gd, Ca, Ba), and Zr-site (Nb, Ta, Sb, W) co-doping.
 - **Scope**: Screens ~150 charge-balanced permutations down to the top 50, evaluates via CHGNet, checks stability (thermodynamic, dynamical, mechanical), and validates via Arrhenius MD.
 - **Docs**: [Pipeline 1 (Standard):](file:///d:/doped_2/04_docs/readmes/README_Pipeline1_Standard.md)
 - **Runner**: `run_standard_pipeline.ps1`
