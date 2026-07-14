@@ -1,0 +1,28 @@
+# Doped-LLZO Pipeline — Pinned Python Dependencies
+# Generated from active environment: Python 3.13.2, Windows 11
+# Install with: pip install -r requirements.txt
+#
+# GPU acceleration notes:
+#   - torch is installed as CPU-only (torch==2.9.1+cpu) in this environment.
+#   - For GPU-accelerated CHGNet MD / relaxation, replace with the CUDA build:
+#       pip install torch==2.9.1+cu121 --index-url https://download.pytorch.org/whl/cu121
+#   - Steps 3c, 4b, 4c, 5 will be extremely slow on CPU-only torch (hours vs minutes).
+
+# Core numerics
+numpy>=2.2.6
+pandas>=2.2.3
+
+# Machine learning / surrogate model
+scikit-learn>=1.8.0
+joblib>=1.5.2
+
+# Materials science
+pymatgen>=2024.11.13
+ase>=3.22.1
+
+# Neural network potentials
+chgnet>=0.3.8
+torch>=2.9.1
+
+# Utilities
+tqdm>=4.67.1

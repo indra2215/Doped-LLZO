@@ -1,3 +1,7 @@
-formula,is_dynamically_stable,max_imaginary_freq_THz
-Li7.0La2.9Gd0.1Zr1.9Hf0.1O12,False,inf
-Li7.0La2.9Y0.1Zr2.0O12,False,inf
+formula,is_dynamically_stable,max_imaginary_freq_THz,data_quality
+# NOTE: Both rows are exception-fallback sentinel values (inf imaginary freq = phonon calc crashed).
+# The Phonopy+CHGNet phonon calculation requires more memory/time than available locally.
+# These rows should be treated as PENDING/FAILED, not as real phonon results.
+# Script: 02_pipeline/step4_stability/dynamical_stability.py
+Li7.0La2.9Gd0.1Zr1.9Hf0.1O12,False,inf,SENTINEL_FAILURE
+Li7.0La2.9Y0.1Zr2.0O12,False,inf,SENTINEL_FAILURE

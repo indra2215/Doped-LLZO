@@ -1,4 +1,8 @@
-bulk_modulus_vrh,shear_modulus_vrh,poisson_ratio,is_mechanically_stable,formula
-0,0,0,False,Li6.500Ga0.10La3Zr1.80Nb0.20O12
-0,0,0,False,Li6.500Fe0.10La3Zr1.80Nb0.20O12
-0,0,0,False,Li6.500Al0.10La3Zr1.80Sb0.20O12
+formula,bulk_modulus_vrh,shear_modulus_vrh,poisson_ratio,is_mechanically_stable,data_quality
+# NOTE: All 0/0/0 rows are exception-fallback sentinel values, NOT real elastic tensor results.
+# The CHGNet finite-difference stress calculation threw exceptions (swallowed by bare except).
+# These rows should be treated as PENDING, not as evidence of zero moduli.
+# Script: 02_pipeline/step4_stability/mechanical_stability.py
+Li6.500Ga0.10La3Zr1.80Nb0.20O12,0,0,0,False,SENTINEL_FAILURE
+Li6.500Fe0.10La3Zr1.80Nb0.20O12,0,0,0,False,SENTINEL_FAILURE
+Li6.500Al0.10La3Zr1.80Sb0.20O12,0,0,0,False,SENTINEL_FAILURE

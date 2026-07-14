@@ -47,26 +47,57 @@ CANDIDATES_FILE = ROOT / "01_data" / "results" / "evaluated_top_candidates.csv"
 RESULTS_FILE    = ROOT / "01_data" / "results" / "finalresults.csv"
 RELAXED_DIR     = ROOT / "03_structures" / "relaxed"
 
-# ── MD Settings ────────────────────────────────────────────────────────────
-# FAST_MODE = True  →  ~10 ps per temp,  ~5–15 min total
-# FAST_MODE = False →  ~1 ns per temp,   ~12+ hrs total
+# ── MD Settings ────────────────────────────────────────────────────────────────
+# FAST_MODE = True  →  1,000 steps (~2 ps),   local testing only
+# FAST_MODE = False →  25,000 steps (~50 ps),  minimum for Arrhenius fits
+# RECOMMENDED for production: 50,000+ steps (100+ ps) at 600/800/1000 K
 FAST_MODE    = True
 
 if FAST_MODE:
-    MD_STEPS   = 1_000    # 2 ps at 2 fs/step (reduced to prevent OOM)
+    MD_STEPS   = 1_000    # ~2 ps at 2 fs/step (FAST: local testing only, too short for Arrhenius)
     print("[FAST_MODE] Running 1,000 MD steps (~2 ps) per temperature.")
+    print("  WARNING: 2 ps is below the diffusive regime. Arrhenius fits will be noisy.")
+    print("  Set FAST_MODE = False and MD_STEPS = 25000+ for production runs.")
 else:
-    MD_STEPS   = 500_000  # 1 ns
-    print("[FULL_MODE] Running 500,000 MD steps (~1 ns) per temperature.")
+    MD_STEPS   = 25_000   # ~50 ps — minimum for meaningful Arrhenius fit
+    print("[PRODUCTION_MODE] Running 25,000 MD steps (~50 ps) per temperature.")
 
 TIME_STEP    = 2.0           # fs
 TEMPERATURES = [600, 800, 1000]  # K — Arrhenius extrapolation to 298 K
 D_MIN_CM2_S  = 1e-14         # minimum meaningful diffusivity threshold
 
-# ── Load CHGNet once ───────────────────────────────────────────────────────
+# ── Geometry sanity check constants (garnet LLZO family) ──────────────────────
+VOL_ATOM_MIN_ANG3 = 10.0    # Å³/atom — below this → cell collapsed / bad relaxation
+VOL_ATOM_MAX_ANG3 = 16.0    # Å³/atom — above this → cell exploded / isolated atoms
+SIGMA_MELT_THRESHOLD = 0.1  # S/cm — if σ_RT > this, flag as FAILED_MELT (unphysical)
+
+# ── Load CHGNet once ───────────────────────────────────────────────────────────
 print("Loading CHGNet (single load for all MD runs)...", flush=True)
 _chgnet     = CHGNet.load()
 _calculator = CHGNetCalculator(model=_chgnet)
+
+
+def check_geometry_sanity(atoms, formula: str) -> bool:
+    """
+    Pre-MD geometry sanity check for garnet LLZO family.
+    Valid range: volume/atom ∈ [10, 16] Å³ (experimental garnets: ~11–13 Å³/atom).
+
+    Returns True if geometry is acceptable, False if the structure should be
+    rejected before wasting GPU time on MD.
+    """
+    vol_per_atom = atoms.get_volume() / len(atoms)
+    if vol_per_atom < VOL_ATOM_MIN_ANG3:
+        print(f"  [GEOMETRY FAIL] {formula}: vol/atom = {vol_per_atom:.2f} Å³ "
+              f"(< {VOL_ATOM_MIN_ANG3} Å³ minimum). Cell likely collapsed. "
+              f"Re-run relaxation with more steps/tighter fmax before MD.")
+        return False
+    if vol_per_atom > VOL_ATOM_MAX_ANG3:
+        print(f"  [GEOMETRY FAIL] {formula}: vol/atom = {vol_per_atom:.2f} Å³ "
+              f"(> {VOL_ATOM_MAX_ANG3} Å³ maximum). Cell likely exploded or has "
+              f"isolated atoms. Re-run relaxation before MD.")
+        return False
+    print(f"  [GEOMETRY OK] {formula}: vol/atom = {vol_per_atom:.2f} Å³ — in garnet range.")
+    return True
 
 
 def run_md_for_structure(atoms, temp: int):
@@ -112,9 +143,14 @@ def run_md_for_structure(atoms, temp: int):
             print(f"  Too few MSD points ({len(msd_values)}). Skipping.")
             return None, 0
 
-        # Fit MSD slope → diffusion coefficient (use second half for stability)
+        # Fit MSD slope → diffusion coefficient
+        # Discard the first 50% of MSD data (equilibration / thermostat settling).
+        # Only fit the stationary diffusive regime in the second half.
         time_array = np.arange(len(msd_values)) * 100 * TIME_STEP * 1e-15  # s
-        fit_start  = max(1, len(time_array) // 2)
+        fit_start  = max(1, len(time_array) // 2)  # discard first 50% (equilibration)
+        if len(time_array) - fit_start < 5:
+            print(f"  Not enough post-equilibration points for reliable fit. Skipping.")
+            return None, 0
         slope, _   = np.polyfit(time_array[fit_start:], msd_values[fit_start:], 1)
 
         # D = slope / 6  (3D), Å²/s → cm²/s (× 1e-16)
@@ -156,6 +192,13 @@ def main():
 
         # Load atoms once, re-copy per temperature
         base_atoms = read(str(cif_path))
+
+        # ── Pre-MD geometry sanity check ──────────────────────────────────────
+        if not check_geometry_sanity(base_atoms, formula):
+            print(f"  Skipping {formula} — geometry outside valid garnet range.")
+            print(f"  Fix: Re-run evaluate_candidates_chgnet.py with steps=50/25, fmax=0.1")
+            continue
+
         li_count   = sum(1 for a in base_atoms if a.symbol == 'Li')
         volume_cm3 = base_atoms.get_volume() * 1e-24  # Å³ → cm³
         n_Li       = li_count / volume_cm3             # #/cm³
@@ -198,10 +241,22 @@ def main():
         print(f"  Ea   = {Ea_eV:.3f} eV")
         print(f"  σ_RT = {sigma_RT:.3e} S/cm")
 
+        # ── Conductivity sanity gate ──────────────────────────────────────────
+        # σ_RT > 0.1 S/cm is physically impossible for any known solid electrolyte
+        # at room temperature; it indicates a melted/exploded structure or a
+        # numerical artefact from a very short MD run with a bad initial kick.
+        md_status = "OK"
+        if sigma_RT > SIGMA_MELT_THRESHOLD:
+            print(f"  [CONDUCTIVITY FAIL] σ_RT = {sigma_RT:.3e} S/cm > {SIGMA_MELT_THRESHOLD} S/cm threshold.")
+            print(f"  This is physically impossible — likely a melted or non-converged structure.")
+            print(f"  Flagging as FAILED_MELT. Do not use this value for reporting.")
+            md_status = "FAILED_MELT"
+
         result = {
             "formula":                             formula,
             "md_validated_conductivity_S_cm":      sigma_RT,
             "md_validated_activation_energy_eV":   Ea_eV,
+            "md_status":                           md_status,
         }
         for temp, v in diffusivities.items():
             result[f"D_{temp}K_cm2_s"] = v

@@ -1,0 +1,153 @@
+{
+  "manifest_version": "1.0",
+  "generated": "2026-07-13",
+  "project": "Doped-LLZO Solid-State Electrolyte Discovery",
+  "pipelines": {
+    "standard": {
+      "description": "High-performance Li/Ga/Al/Fe + Nb/Ta/Sb/W co-doped LLZO",
+      "runner": "run_standard_pipeline.ps1",
+      "stages": {
+        "step1_feature_extraction": {
+          "script": "02_pipeline/step1_feature_extraction/fast_surrogate_extraction.py",
+          "input": "01_data/experimental/experimental-ionic conductivity-dataset.csv",
+          "output": "01_data/results/bayesian_features.csv",
+          "status": "COMPLETE",
+          "output_rows": 679,
+          "notes": "Compositional features (7 cols) for all 679 experimental samples"
+        },
+        "step2_model_training": {
+          "script": "02_pipeline/step2_model_training/bayesian_validation.py",
+          "input": "01_data/results/bayesian_features.csv",
+          "output": "02_pipeline/step2_model_training/trained_gpr_model.pkl",
+          "status": "COMPLETE",
+          "notes": "GPR + RF; 5-fold CV R^2 > 0.60 on 679 samples (not Zr-filtered)"
+        },
+        "step3a_candidate_generation": {
+          "script": "02_pipeline/step3_screening/generate_candidates.py",
+          "input": null,
+          "output": "01_data/candidates/bayesian_virtual_candidates.csv",
+          "status": "COMPLETE",
+          "output_rows": 14474,
+          "notes": "Stochastic charge-balanced virtual library; up to 20,000 requested, 14,474 unique passed charge balance"
+        },
+        "step3b_compositional_screening": {
+          "script": "02_pipeline/step3_screening/compositional_screening.py",
+          "input": "01_data/candidates/bayesian_virtual_candidates.csv",
+          "output": "01_data/candidates/top_50_screened_candidates.csv",
+          "status": "COMPLETE",
+          "output_rows": 50,
+          "notes": "RF trained on garnet-Zr-filtered subset; selects top 50 by predicted log-sigma"
+        },
+        "step3c_chgnet_evaluation": {
+          "script": "02_pipeline/step3_screening/evaluate_candidates_chgnet.py",
+          "input": "01_data/candidates/top_50_screened_candidates.csv",
+          "output": "01_data/results/evaluated_top_candidates.csv",
+          "output_cif_dir": "03_structures/relaxed/",
+          "status": "COMPLETE",
+          "output_rows": 36,
+          "output_cifs": 41,
+          "notes": "36/50 succeeded. CIF count is 41 (includes 3 legacy baseline structures + 2 novel candidates run separately). Several CIFs have corrupted volumes (vol/atom > 16 A^3) — see geometry_issues below.",
+          "geometry_issues": {
+            "description": "Structures with relaxed_volume_per_atom outside garnet-valid range 10-16 A^3",
+            "cause": "Staged relaxation with steps=10/5 insufficient for some substituted cells",
+            "flagged_examples": [
+              {"formula": "Li6.45La2.95Ba0.05Zr1.4Ta0.6O12", "vol_per_atom": 38.7},
+              {"formula": "Li6.45La2.95Ca0.05Zr1.4Ta0.6O12", "vol_per_atom": 45.7},
+              {"formula": "Li6.4La2.75Gd0.25Zr1.4Ta0.6O12", "vol_per_atom": 31.7},
+              {"formula": "Li6.45La2.9Ca0.1Zr1.35Ta0.65O12", "vol_per_atom": 46.1}
+            ],
+            "fix": "Re-run evaluate_candidates_chgnet.py with steps=50/25 and fmax=0.1"
+          }
+        },
+        "step4a_thermodynamic_stability": {
+          "script": "02_pipeline/step4_stability/thermodynamic_stability.py",
+          "input": "01_data/candidates/top_50_screened_candidates.csv",
+          "output": "01_data/results/thermodynamic_stability.csv",
+          "status": "BLOCKED",
+          "output_rows": 0,
+          "notes": "Requires $env:MP_API_KEY. Script ran successfully but returned 0 rows because API key was not set."
+        },
+        "step4b_dynamical_stability": {
+          "script": "02_pipeline/step4_stability/dynamical_stability.py",
+          "output": "01_data/results/dynamical_stability.csv",
+          "status": "FAILED_SENTINEL",
+          "output_rows": 2,
+          "notes": "Both rows are exception-fallback sentinels (inf imaginary freq). OOM on local machine. HPC required (~16 GB RAM, ~15 min/candidate)."
+        },
+        "step4c_mechanical_stability": {
+          "script": "02_pipeline/step4_stability/mechanical_stability.py",
+          "output": "01_data/results/mechanical_stability.csv",
+          "status": "FAILED_SENTINEL",
+          "output_rows": 3,
+          "notes": "All 3 rows are exception-fallback sentinels (0/0/0 bulk/shear/Poisson). Bare-except swallows real error. HPC required."
+        },
+        "step5_md_validation": {
+          "script": "02_pipeline/step5_md_validation/backtrack_validation_corrected.py",
+          "output": "01_data/results/finalresults.csv",
+          "status": "BLOCKED_GEOMETRY",
+          "output_rows": 0,
+          "notes": "Geometry sanity check (vol/atom in 10-16 A^3) blocks corrupted structures from MD. Pre-requisite: fix step3c geometry failures, then set FAST_MODE=False and run on HPC."
+        }
+      }
+    },
+    "earth_abundant": {
+      "description": "Low-cost Fe/Mg/Mn/Zn + Ti/Nb/Sn co-doped LLZO",
+      "runner": "run_ea_pipeline.ps1",
+      "stages": {
+        "step1_to_step3": {
+          "status": "COMPLETE",
+          "notes": "535 charge-balanced candidates generated and screened"
+        },
+        "step4_chgnet_validation": {
+          "output": "earth_abundant/data/results/ea_validated_candidates.csv",
+          "status": "COMPLETE",
+          "output_rows": 5,
+          "notes": "5 candidates passed CHGNet static + GPR screening. All thermally stable (delta_E < LLZO). GPR sigma ~5-7e-4 S/cm (10^-4 order)."
+        },
+        "step5_thermodynamic_stability": {
+          "output": "earth_abundant/data/results/ea_thermodynamic_stability.csv",
+          "status": "PARTIAL",
+          "notes": "Requires MP_API_KEY."
+        },
+        "step6_md_validation": {
+          "output": "earth_abundant/data/results/ea_finalresults.csv",
+          "status": "BLOCKED_GEOMETRY",
+          "notes": "Same geometry-fix prerequisite as standard pipeline step5."
+        }
+      }
+    }
+  },
+  "submission_folder": "FINAL_RESULTS_HACKATHON/",
+  "submission_files": {
+    "EarthAbundantPipeline_ea_validated_candidates.csv": {
+      "rows": 5,
+      "data_quality": "REAL",
+      "notes": "Best available EA result — CHGNet static + GPR predictions, all thermally stable"
+    },
+    "StandardPipeline_evaluated_top_candidates.csv": {
+      "rows": 36,
+      "data_quality": "REAL_WITH_GEOMETRY_FLAGS",
+      "notes": "Real CHGNet output. Some rows have corrupted vol/atom (see geometry_issues in manifest). relaxed_cif_path column uses relative paths."
+    },
+    "StandardPipeline_finalresults.csv": {
+      "rows": 0,
+      "data_quality": "PENDING",
+      "notes": "MD validation pending geometry fix + HPC run"
+    },
+    "StandardPipeline_thermodynamic_stability.csv": {
+      "rows": 0,
+      "data_quality": "PENDING",
+      "notes": "Blocked on MP_API_KEY"
+    },
+    "StandardPipeline_mechanical_stability.csv": {
+      "rows": 3,
+      "data_quality": "SENTINEL_FAILURE",
+      "notes": "All 0/0/0 — bare-except fallback values, not real elastic tensor results"
+    },
+    "StandardPipeline_dynamical_stability.csv": {
+      "rows": 2,
+      "data_quality": "SENTINEL_FAILURE",
+      "notes": "Both inf — phonon calc crashed, bare-except fallback"
+    }
+  }
+}

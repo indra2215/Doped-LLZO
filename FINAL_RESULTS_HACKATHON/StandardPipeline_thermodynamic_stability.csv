@@ -1,1 +1,5 @@
-formula,e_above_hull_eV_atom
+formula,e_above_hull_eV_atom,data_quality
+# NOTE: Thermodynamic hull calculation requires Materials Project API key ($env:MP_API_KEY).
+# The script (02_pipeline/step4_stability/thermodynamic_stability.py) ran but returned 0 rows
+# because the API key was not configured during the pipeline run.
+# Re-run with a valid MP_API_KEY to populate this file.

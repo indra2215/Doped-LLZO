@@ -27,13 +27,33 @@ RELAXED_DIR     = ROOT / "03_structures" / "relaxed"
 
 
 def get_base_structure():
-    """Builds base LLZO garnet (Ia-3d, a=12.98 Å)."""
-    return Structure.from_spacegroup(
+    """
+    Builds base LLZO garnet (Ia-3d, a=12.98 Å) with correct 192-atom stoichiometry.
+    Includes both the 24d and 96h Wyckoff sites for Lithium.
+    """
+    import random
+    s = Structure.from_spacegroup(
         'Ia-3d',
         Lattice.cubic(12.98),
-        ['Li', 'La', 'Zr', 'O'],
-        [[0.125, 0.5, 0.75], [0.125, 0.25, 0.375], [0, 0, 0], [0.105, 0.19, 0.795]]
+        ['Li', 'Li', 'La', 'Zr', 'O'],
+        [
+            [0.375, 0.0, 0.25],       # 24d Li (24 sites)
+            [0.098, 0.686, 0.577],    # 96h Li (96 sites)
+            [0.125, 0.0, 0.25],       # 24c La (24 sites)
+            [0, 0, 0],                # 16a Zr (16 sites)
+            [0.282, 0.096, 0.194]     # 96h O  (96 sites)
+        ]
     )
+    
+    # We have 120 Li sites total, but Li7La3Zr2O12 needs 56 Li atoms (Z=8).
+    # Delete 64 random Li atoms from the 96h site.
+    li_indices = [i for i, site in enumerate(s) if site.species_string == 'Li']
+    li_96h_indices = li_indices[24:] # first 24 are the 24d sites
+    random.seed(42) # Deterministic for reproducibility
+    to_delete = random.sample(li_96h_indices, 64)
+    s.remove_sites(to_delete)
+    
+    return s
 
 
 def build_substituted_structure(base_structure, formula):
@@ -63,6 +83,8 @@ def build_substituted_structure(base_structure, formula):
     if "Zn" in dopants and len(li_idx) > 5: syms[li_idx[5]] = "Zn"
     if "Ti" in dopants and len(zr_idx) > 5: syms[zr_idx[5]] = "Ti"
     if "Sn" in dopants and len(zr_idx) > 6: syms[zr_idx[6]] = "Sn"
+    if "Ba" in dopants and len(la_idx) > 2: syms[la_idx[2]] = "Ba"
+    if "Ca" in dopants and len(la_idx) > 3: syms[la_idx[3]] = "Ca"
 
     atoms.set_chemical_symbols(syms)
     return AseAtomsAdaptor.get_structure(atoms)

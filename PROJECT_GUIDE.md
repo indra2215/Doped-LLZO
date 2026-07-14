@@ -8,10 +8,8 @@
 | File | Purpose |
 |------|---------|
 | `README.md` | Main project overview — start here |
-| `RESULTS.md` | Live progress tracker — updated as pipeline runs |
-| `Summary_PrePrint.md` | Human-readable research pre-print (like a paper abstract) |
+| `RESULTS.md` | Results tracker — updated to reflect actual compute state |
 | `Further_Improvements.md` | Pending HPC tasks + known hardware issues |
-| `PROJECT_INDEX.md` | Brief index of folder structure |
 | `run_standard_pipeline.ps1` | One-click PowerShell runner for the full High-Performance pipeline |
 | `run_ea_pipeline.ps1` | One-click PowerShell runner for the Earth Abundant pipeline |
 
@@ -35,11 +33,11 @@
 | File | Rows | Purpose |
 |------|------|---------|
 | `bayesian_features.csv` | 679 | Compositional features extracted from the experimental dataset |
-| `evaluated_top_candidates.csv` | 35 | CHGNet-relaxed structures + GPR conductivity predictions for the top 35 candidates |
-| `thermodynamic_stability.csv` | 35 | Energy above convex hull (eV/atom) from Materials Project API |
-| `dynamical_stability.csv` | 2 | Phonon stability results (partial — needs HPC for full 35) |
-| `mechanical_stability.csv` | 3 | Elastic tensor results (partial — needs HPC for full 35) |
-| `finalresults.csv` | 0 | MD-validated ionic conductivity — EMPTY, needs HPC to generate |
+| `evaluated_top_candidates.csv` | 36 | CHGNet-relaxed structures + GPR conductivity predictions for top 36 candidates |
+| `thermodynamic_stability.csv` | 0 | Energy above convex hull — **empty: MP_API_KEY was not configured during run** |
+| `dynamical_stability.csv` | 2 | Phonon results — **both rows are SENTINEL_FAILURE (bare-except fallback, inf imaginary freq)** |
+| `mechanical_stability.csv` | 3 | Elastic tensor results — **all 3 rows are SENTINEL_FAILURE (bare-except fallback, 0/0/0)** |
+| `finalresults.csv` | 0 | MD Arrhenius conductivity — **empty: geometry sanity check blocked corrupt structures from MD** |
 
 ### `01_data/results_v1_backup/`
 Old backup from a previous pipeline run — kept for reference only.
@@ -87,7 +85,10 @@ Old backup from a previous pipeline run — kept for reference only.
 ## 📁 03_structures/ — Crystal Structure Files
 
 ### `03_structures/relaxed/`
-Contains **41 relaxed CIF files** — one per successfully evaluated candidate. Each `.cif` file is the crystal structure after CHGNet geometry optimization. These are the input for Step 4 and 5.
+Contains **41 relaxed CIF files** (live-counted via `Get-ChildItem -Filter *.cif`) — one per successfully evaluated candidate. Each `.cif` file is the crystal structure after CHGNet geometry optimization. These are the input for Step 4 and 5.
+
+> [!WARNING]
+> Several CIFs have `relaxed_volume_per_atom` outside the garnet-valid range (~10–14 Å³). These must be re-relaxed before being fed into MD. See `FINAL_RESULTS_HACKATHON/STABILITY_NOTE.md` for details.
 
 ---
 
@@ -129,21 +130,10 @@ A completely separate, parallel pipeline focused on **low-cost, sustainable dopa
 ### `FINAL_Results/High_Performance_Pipeline/`
 | File | Purpose |
 |------|---------|
-| `MASTER_RESULTS.csv` | ⭐ **THE MAIN OUTPUT** — All 35 candidates ranked with all available data merged |
-| `candidates_overview.png` | Visual ranking chart |
-| `thermodynamic_stability.csv` | Copy of stability results |
-| `evaluated_top_candidates_in_progress.csv` | Live save during CHGNet run |
+| `earth_abundant_candidates_validated.csv` | 20 raw EA screening candidates (pre-GPR, no M3GNet) |
 
----
-
-## 📁 hpc_scripts/ — HPC Cluster Submission
-
-| File | Purpose |
-|------|---------|
-| `run_dynamical_stability.pbs` | Submit phonon jobs to PBS cluster |
-| `run_mechanical_stability.pbs` | Submit elastic tensor jobs to PBS cluster |
-| `run_md_validation.pbs` | Submit MD validation to PBS cluster |
-| `plot_candidates.py` | Script that generated the visualization |
+### `FINAL_Results/Earth_Abundant_Pipeline/`
+Same 20-row raw screening copy — kept for archival reference.
 
 ---
 
