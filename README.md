@@ -24,13 +24,13 @@ The project recently underwent a major structural refactoring to cleanly separat
 ### A. Standard Pipeline (`02_pipeline/`)
 - **Focus**: High-performance Li-site (Al, Ga, Fe, Zn), La-site (Sr, Y, Gd, Ca, Ba), and Zr-site (Nb, Ta, Sb, W) co-doping.
 - **Scope**: Screens ~150 charge-balanced permutations down to the top 50, evaluates via CHGNet, checks stability (thermodynamic, dynamical, mechanical), and validates via Arrhenius MD.
-- **Docs**: [Pipeline 1 (Standard):](file:///d:/doped_2/04_docs/readmes/README_Pipeline1_Standard.md)
+- **Docs**: [Pipeline 1 (Standard)](04_docs/readmes/README_Pipeline1_Standard.md)
 - **Runner**: `run_standard_pipeline.ps1`
 
 ### B. Earth-Abundant Pipeline (`earth_abundant/`)
 - **Focus**: Low-cost, sustainable dopants only (Fe, Mg, Mn, Zn on Li-site; Ti, Nb, Sn on Zr-site). Excludes expensive elements like Ta, W, Ga.
 - **Scope**: Screens 535 candidates through CHGNet/M3GNet cross-validation, checks thermodynamic hull distance via Materials Project, and runs Arrhenius MD on the top 5 thermally stable candidates.
-- **Docs**: [Pipeline 2 (Earth-Abundant):](file:///d:/doped_2/04_docs/readmes/README_Pipeline2_EarthAbundant.md)
+- **Docs**: [Pipeline 2 (Earth-Abundant)](04_docs/readmes/README_Pipeline2_EarthAbundant.md)
 - **Runner**: `run_ea_pipeline.ps1`
 
 ---
@@ -39,8 +39,8 @@ The project recently underwent a major structural refactoring to cleanly separat
 
 We have audited the code and fixed critical structural and physical bugs that were previously corrupting results:
 
-1. **Garnet Data Filter (Fixed)**: Previously, GPR training data included non-garnet structures (like LLTO perovskites). These were mapped to a garnet unit cell, yielding identical volumes and corrupting the surrogate model. We implemented a mandatory `Zr` check, retaining exactly 45 genuine LLZO training samples.
-2. **Flat Volume Bug (Fixed)**: `volume_per_atom` was flat at 9.426 Å³ for all training samples because they used unrelaxed cells. We introduced a fast, position-only `staged_relax(relax_cell=False)` during feature extraction so each composition gets a physically meaningful volume for GPR training.
+1. **Garnet Data Filter**: The GPR surrogate model currently trains on all valid positive-conductivity samples in `bayesian_features.csv` (679 points) to maximize chemical diversity and generalizability. Optional Zr filtering for strict garnet-only training is supported in the dataset utilities.
+2. **Cell Relaxation & Fallback (Fixed)**: Structural evaluation uses a 2-step `staged_relax()` pipeline (positions first, followed by full cell relaxation with fallback to `pos_only` if cell relaxation fails).
 3. **CHGNet Cell-Filter Crash (Fixed)**: Full cell relaxation on substituted garnets caused an "isolated atom" crash in CHGNet. We implemented a 2-step `staged_relax()`: relax positions first, then relax the full cell using the better starting geometry.
 4. **Double Model Load (Fixed)**: The lazy initialization of `StructOptimizer` loaded CHGNet twice, causing a `UserWarning` that crashed PowerShell. We shifted to eager initialization, passing the already-loaded model context to the optimizer.
 5. **MD PBC Unwrapping (Fixed)**: Incremental unwrapping was added to the Langevin NVT MD script, fixing a bug where Mean Squared Displacement (MSD) calculations jumped erroneously across periodic boundaries.

@@ -233,7 +233,9 @@ def rapid_surrogate_extraction():
             relaxed_struct, energy_per_atom, relax_mode = staged_relax(
                 modified_structure, calculator, optimizer
             )
-            volume_per_atom = relaxed_struct.volume / len(relaxed_struct)
+            volume_per_atom = float(relaxed_struct.volume / len(relaxed_struct))
+            if not np.isfinite(volume_per_atom) or volume_per_atom <= 0:
+                raise ValueError(f"Invalid relaxed volume per atom: {volume_per_atom}")
 
             # Save relaxed (or best-available) structure to CIF
             cif_path = RELAXED_DIR / f"{formula}_evaluated.cif"

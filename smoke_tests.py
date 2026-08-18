@@ -163,6 +163,40 @@ check_no_sentinels(
     "is_dynamically_stable", False, "dynamical_stability"
 )
 
+print("\n=== 5b. Scientific Output Quality Checks ===")
+def check_scientific_outputs():
+    import numpy as np
+    ea_val_path = ROOT / "earth_abundant/data/results/ea_validated_candidates.csv"
+    if ea_val_path.exists():
+        try:
+            df = pd.read_csv(ea_val_path)
+            vol_cols = [c for c in df.columns if "volume" in c.lower() or "v_per_atom" in c.lower()]
+            for c in vol_cols:
+                check(f"Volume variance in {c}", df[c].nunique() > 1,
+                      f"Flat volume column detected: {df[c].iloc[0] if len(df) > 0 else 'empty'}", is_warning=True)
+        except Exception as e:
+            check("EA validated volumes checkable", False, str(e))
+
+    thermo_paths = [
+        "01_data/results/thermodynamic_stability.csv",
+        "earth_abundant/data/results/ea_thermodynamic_stability.csv",
+        "FINAL_RESULTS_HACKATHON/StandardPipeline_thermodynamic_stability.csv"
+    ]
+    for rel_p in thermo_paths:
+        p = ROOT / rel_p
+        if p.exists():
+            try:
+                df = pd.read_csv(p)
+                if "e_above_hull_eV_atom" in df.columns:
+                    vals = pd.to_numeric(df["e_above_hull_eV_atom"], errors="coerce")
+                    has_inf = np.isinf(vals).any()
+                    check(f"No inf values in {rel_p}", not has_inf,
+                          "inf values found in e_above_hull_eV_atom", is_warning=False)
+            except Exception as e:
+                check(f"{rel_p} stability checkable", False, str(e))
+
+check_scientific_outputs()
+
 # ─── 6. CIF count in relaxed/ ──────────────────────────────────────────────────
 print("\n=== 6. Relaxed Structure CIF Count ===")
 cif_dir = ROOT / "03_structures" / "relaxed"

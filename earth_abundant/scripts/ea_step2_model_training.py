@@ -74,6 +74,19 @@ def run_validation():
     gpr_scores = cross_val_score(pipeline, X, y, cv=cv, scoring='r2')
     print(f"GPR Cross-Validated R² Scores: {np.round(gpr_scores, 4)}")
     print(f"--> GPR Mean R²: {np.mean(gpr_scores):.4f}")
+
+    import json
+    metrics_file = EA_ROOT / "data" / "models" / "ea_cv_metrics.json"
+    metrics_file.parent.mkdir(parents=True, exist_ok=True)
+    metrics_file.write_text(json.dumps({
+        "n_samples": int(len(X)),
+        "n_folds": int(n_folds),
+        "rf_r2": rf_scores.tolist(),
+        "gpr_r2": gpr_scores.tolist(),
+        "gpr_r2_mean": float(np.mean(gpr_scores)),
+        "gpr_r2_std": float(np.std(gpr_scores, ddof=1))
+    }, indent=2))
+    print(f"CV metrics saved to: {metrics_file}")
     
     # Refit on full data before saving
     print("\nRefitting GPR on full dataset...")

@@ -71,10 +71,10 @@ def extract_features(formula):
             "avg_row": avg_row,
             "avg_col": avg_col,
             "num_elements": num_elements
-        }
+        }, None
     except Exception as e:
         print(f"Error parsing {formula}: {e}")
-        return None
+        return None, str(e)
 
 def main():
     print(f"Loading raw dataset from {RAW_FILE}")
@@ -82,6 +82,7 @@ def main():
     print(f"Loaded {len(df)} samples.")
     
     features_list = []
+    failed_list = []
     
     for idx, row in df.iterrows():
         formula = row["formula"]
@@ -91,12 +92,14 @@ def main():
         if pd.isna(log_sigma) and not pd.isna(sigma):
             log_sigma = np.log10(sigma)
             
-        feats = extract_features(formula)
+        feats, err = extract_features(formula)
         if feats is not None:
             feats["formula"] = formula
             feats["sigma"] = sigma
             feats["log_sigma"] = log_sigma
             features_list.append(feats)
+        else:
+            failed_list.append({"formula": formula, "error": err})
             
     df_out = pd.DataFrame(features_list)
     df_out = df_out.dropna() # Drop any rows where features couldn't be computed
@@ -105,6 +108,11 @@ def main():
     df_out.to_csv(OUT_FILE, index=False)
     print(f"Successfully extracted features for {len(df_out)} samples.")
     print(f"Saved to {OUT_FILE}")
+
+    if failed_list:
+        err_file = OUT_FILE.parent / "feature_extraction_errors.csv"
+        pd.DataFrame(failed_list).to_csv(err_file, index=False)
+        print(f"Saved parse error manifest ({len(failed_list)} rows) to {err_file}")
 
 if __name__ == "__main__":
     main()

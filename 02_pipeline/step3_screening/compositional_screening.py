@@ -75,7 +75,8 @@ def run_compositional_screening():
     rf.fit(X_train, y_train)
 
     score = rf.score(X_train, y_train)
-    print(f"Compositional Pre-Screening R² Score (Training): {score:.4f}")
+    # Note: score is training-set R² (for model fitting verification). Held-out R² is computed via KFold CV in bayesian_validation.py.
+    print(f"Compositional Pre-Screening R² Score (Training fit only, not CV): {score:.4f}")
 
     print(f"\nEvaluating {len(cands_df)} Virtual Candidates...")
     cands_df['Predicted_log_Sigma']    = rf.predict(X_cands)

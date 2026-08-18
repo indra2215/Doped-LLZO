@@ -37,7 +37,7 @@ def get_e_above_hull(structure: Structure) -> float:
 
             if not entries:
                 print(f"  Warning: No MP entries found for {structure.composition.reduced_formula}")
-                return float('inf')
+                raise RuntimeError(f"No Materials Project entries for {structure.composition.reduced_formula}")
 
             pd_obj = PhaseDiagram(entries)
 
@@ -53,7 +53,7 @@ def get_e_above_hull(structure: Structure) -> float:
 
         except Exception as e:
             print(f"  Error for {structure.composition.reduced_formula}: {e}")
-            return float('inf')
+            raise RuntimeError(f"Hull calculation failed for {structure.composition.reduced_formula}: {e}") from e
 
 
 def main():
@@ -108,13 +108,18 @@ def main():
                 continue
 
             e_hull = get_e_above_hull(relaxed_structure)
-            results.append({'formula': formula, 'e_above_hull_eV_atom': e_hull})
+            results.append({'formula': formula, 'e_above_hull_eV_atom': e_hull, 'hull_status': 'OK', 'error': ''})
 
         except Exception as e:
             print(f"  Failed to process {formula}: {e}")
-            results.append({'formula': formula, 'e_above_hull_eV_atom': float('inf')})
+            results.append({'formula': formula, 'e_above_hull_eV_atom': float('nan'), 'hull_status': 'ERROR', 'error': str(e)})
 
     stability_df = pd.DataFrame(results)
+    if 'e_above_hull_eV_atom' in stability_df and not stability_df.empty:
+        import numpy as np
+        stability_df['e_above_hull_eV_atom'] = pd.to_numeric(stability_df['e_above_hull_eV_atom'], errors='coerce')
+        if np.isinf(stability_df['e_above_hull_eV_atom']).any():
+            raise ValueError('inf stability value would be written; inspect failed candidates')
     stability_df.to_csv(OUTPUT_FILE, index=False)
 
     print(f"\nThermodynamic stability check complete. Results saved to: {OUTPUT_FILE}")

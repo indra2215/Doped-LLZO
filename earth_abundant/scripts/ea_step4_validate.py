@@ -123,12 +123,24 @@ def staged_relax(structure, calc, optimizer):
         v = float(structure.volume / len(structure))
         return structure, e, v, 'static'
 
-    # Step 2 — full cell + atoms is skipped because extreme forces during cell expansion
-    # cause hard PyTorch crashes (NaNs) on Windows. We return the pos_only relaxed structure.
-    pred = calc.predict_structure(pos_relaxed)
-    e = float(pred['e'])
-    v = float(pos_relaxed.volume / len(pos_relaxed))
-    return pos_relaxed, e, v, 'pos_only'
+    # Step 2 — attempt full-cell relaxation; retain a finite, explicit fallback.
+    try:
+        res2 = optimizer.relax(pos_relaxed, relax_cell=True, fmax=0.05,
+                               steps=300, verbose=False)
+        final_struct = res2['final_structure']
+        pred = calc.predict_structure(final_struct)
+        e = float(pred['e'])
+        v = float(final_struct.volume / len(final_struct))
+        if not np.isfinite(v) or v <= 0:
+            raise ValueError(f'invalid relaxed volume per atom: {v}')
+        print("    [relax] Step 2 (full cell): OK")
+        return final_struct, e, v, 'full'
+    except Exception as e_full:
+        print(f"    [relax] Step 2 failed ({e_full}). Using position-only result.")
+        pred = calc.predict_structure(pos_relaxed)
+        e = float(pred['e'])
+        v = float(pos_relaxed.volume / len(pos_relaxed))
+        return pos_relaxed, e, v, 'pos_only'
 
 
 # -- Backwards-compat wrapper (called at Step 2 in main) ----------------------
@@ -212,8 +224,18 @@ def thermal_stability(e_candidate, e_baseline):
     0-0.05  : likely thermally stable (within kT at synthesis temps)
     0.05-0.1: marginally stable, sintering may demix
     > 0.1   : likely phase-separates during synthesis
+
+    Guard: if |delta| > 1.0 eV/atom the energy scale or structure is suspect
+    (e.g. different number of formula units, unrelaxed cell, force divergence).
+    In that case we return the raw value but flag it as an error rather than
+    silently labelling it STABLE.
     """
+    if not np.isfinite(e_candidate) or not np.isfinite(e_baseline):
+        return np.nan, "ERROR_INVALID_ENERGY"
     delta = e_candidate - e_baseline
+    if abs(delta) > 1.0:
+        # |ΔE| > 1 eV/atom is nonphysical for a thermal stability proxy
+        return round(delta, 5), "ERROR_ENERGY_SCALE_OR_STRUCTURE"
     if delta < 0:
         label = "STABLE (lower E than LLZO)"
     elif delta < 0.05:

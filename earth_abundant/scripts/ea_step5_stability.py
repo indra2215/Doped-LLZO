@@ -1,4 +1,4 @@
-﻿"""
+"""
 ea_step5_stability.py
 ==============================================================================
 EARTH-ABUNDANT PIPELINE — Step 5: Thermodynamic Stability
@@ -57,7 +57,7 @@ def get_e_above_hull(structure: Structure, api_key: str) -> float:
             entries = mpr.get_entries_in_chemsys(chemsys)
             if not entries:
                 print(f"    No MP entries for {structure.composition.reduced_formula}")
-                return float('inf')
+                raise RuntimeError(f"No MP entries for {structure.composition.reduced_formula}")
 
             pd_obj = PhaseDiagram(entries)
             our_entry = ComputedEntry(
@@ -69,7 +69,7 @@ def get_e_above_hull(structure: Structure, api_key: str) -> float:
 
     except Exception as e:
         print(f"    Hull calculation failed: {e}")
-        return float('inf')
+        raise RuntimeError(f"Hull calculation failed for {structure.composition.reduced_formula}: {e}") from e
 
 
 def main():
@@ -136,9 +136,22 @@ def main():
 
         except Exception as e:
             print(f"    Failed: {e}")
-            results.append({'formula': formula, 'e_above_hull_eV_atom': float('inf')})
+            results.append({
+                'formula':             formula,
+                'pair':                row.get('pair', ''),
+                'Li_pfu':              row.get('Li_pfu', ''),
+                'delta_E_vs_LLZO':     row.get('delta_E_vs_LLZO', ''),
+                'thermal_stability':   row.get('thermal_stability', ''),
+                'e_above_hull_eV_atom': np.nan,
+                'hull_status':         'ERROR',
+                'is_novel':            row.get('is_novel', ''),
+            })
 
     out_df = pd.DataFrame(results)
+    if 'e_above_hull_eV_atom' in out_df and not out_df.empty:
+        out_df['e_above_hull_eV_atom'] = pd.to_numeric(out_df['e_above_hull_eV_atom'], errors='coerce')
+        if np.isinf(out_df['e_above_hull_eV_atom']).any():
+            raise ValueError('inf stability value would be written; inspect failed candidates')
     out_df.to_csv(OUTPUT_CSV, index=False)
     print(f"\nThermodynamic stability complete. Saved to: {OUTPUT_CSV}")
 
