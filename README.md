@@ -2,6 +2,8 @@
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/indra2215/Doped-LLZO/blob/main/chgnet.ipynb)
 
+> 📖 **Complete Execution Guide**: See [WORKFLOW.md](WORKFLOW.md) for step-by-step terminal commands for both research tracks.
+
 ---
 
 ## 1. Project Overview & Mission
