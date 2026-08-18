@@ -1,5 +1,7 @@
 # Doped-LLZO Solid-State Electrolyte Discovery Pipeline
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/indra2215/Doped-LLZO/blob/main/chgnet.ipynb)
+
 ---
 
 ## 1. Project Overview & Mission
