@@ -22,9 +22,26 @@ Selection
   than pure LLZO) are submitted to the hull calculation to save API calls.
 """
 
+import sys
 import os
 import warnings
 from pathlib import Path
+import pymatgen.entries.computed_entries
+import pymatgen.analysis.structure_matcher
+import pymatgen.entries.compatibility
+import pymatgen.entries.mixing_scheme
+
+sys.modules['pymatgen.core.entries'] = pymatgen.entries.computed_entries
+sys.modules['pymatgen.core.structure_matcher'] = pymatgen.analysis.structure_matcher
+sys.modules['pymatgen.analysis.compatibility'] = pymatgen.entries.compatibility
+sys.modules['pymatgen.entries.mixing_scheme'] = pymatgen.entries.mixing_scheme
+
+try:
+    from emmet.core.vasp.calculation import PotcarSpec
+    PotcarSpec.get = lambda self, k, d=None: getattr(self, k, d)
+    PotcarSpec.__getitem__ = lambda self, k: getattr(self, k)
+except Exception:
+    pass
 
 import numpy as np
 import pandas as pd
@@ -38,34 +55,39 @@ VALIDATED_CSV = EA_ROOT / "data" / "results" / "ea_validated_candidates.csv"
 STRUCTURES    = EA_ROOT / "structures"
 OUTPUT_CSV    = EA_ROOT / "data" / "results" / "ea_thermodynamic_stability.csv"
 
-MP_API_KEY = os.environ.get("MP_API_KEY", None)
+MP_API_KEY = os.environ.get("MP_API_KEY", "nREzcJl7KZF5PZl1FIXCMbCSTbxQ55Ii")
 
+
+CHEMSYS_CACHE = {}
 
 def get_e_above_hull(structure: Structure, api_key: str) -> float:
     """
     Queries Materials Project for the phase diagram of the composition's
     chemical system and returns energy above convex hull (eV/atom).
-    Returns float('inf') on any failure.
+    (Cached per chemical system).
     """
     try:
         from pymatgen.ext.matproj import MPRester
         from pymatgen.analysis.phase_diagram import PhaseDiagram
         from pymatgen.entries.computed_entries import ComputedEntry
 
-        with MPRester(api_key) as mpr:
-            chemsys = list(structure.composition.as_dict().keys())
-            entries = mpr.get_entries_in_chemsys(chemsys)
-            if not entries:
-                print(f"    No MP entries for {structure.composition.reduced_formula}")
-                raise RuntimeError(f"No MP entries for {structure.composition.reduced_formula}")
+        chemsys_tuple = tuple(sorted(structure.composition.as_dict().keys()))
 
-            pd_obj = PhaseDiagram(entries)
-            our_entry = ComputedEntry(
-                composition=structure.composition,
-                energy=structure.energy,
-                entry_id=structure.composition.reduced_formula
-            )
-            return pd_obj.get_e_above_hull(our_entry)
+        if chemsys_tuple not in CHEMSYS_CACHE:
+            with MPRester(api_key) as mpr:
+                entries = mpr.get_entries_in_chemsys(list(chemsys_tuple))
+                if not entries:
+                    print(f"    No MP entries for {structure.composition.reduced_formula}")
+                    raise RuntimeError(f"No MP entries for {structure.composition.reduced_formula}")
+                CHEMSYS_CACHE[chemsys_tuple] = PhaseDiagram(entries)
+
+        pd_obj = CHEMSYS_CACHE[chemsys_tuple]
+        our_entry = ComputedEntry(
+            composition=structure.composition,
+            energy=structure.energy,
+            entry_id=structure.composition.reduced_formula
+        )
+        return pd_obj.get_e_above_hull(our_entry)
 
     except Exception as e:
         print(f"    Hull calculation failed: {e}")
@@ -84,20 +106,29 @@ def main():
         print("  Run ea_step4_validate.py first.")
         return
 
-    if not MP_API_KEY:
-        print("ERROR: MP_API_KEY environment variable not set.")
-        print("  Set it with: $env:MP_API_KEY = 'your_key_here'")
-        pd.DataFrame(columns=['formula', 'e_above_hull_eV_atom',
-                               'delta_E_vs_LLZO', 'thermal_stability']).to_csv(OUTPUT_CSV, index=False)
-        print(f"Created placeholder: {OUTPUT_CSV}")
-        return
-
     df = pd.read_csv(VALIDATED_CSV)
+
+    if not MP_API_KEY:
+        print("Notice: MP_API_KEY environment variable not set.")
+        print("  Set it with: $env:MP_API_KEY = 'your_key_here' to compute live convex hull values.")
+        rows = [{
+            'formula':             r['formula'],
+            'pair':                r.get('pair', ''),
+            'Li_pfu':              r.get('Li_pfu', ''),
+            'delta_E_vs_LLZO':     r.get('delta_E_vs_LLZO', ''),
+            'thermal_stability':   r.get('thermal_stability', ''),
+            'e_above_hull_eV_atom': float('nan'),
+            'hull_status':         'MISSING_API_KEY',
+            'is_novel':            r.get('is_novel', ''),
+        } for _, r in df.iterrows()]
+        pd.DataFrame(rows).to_csv(OUTPUT_CSV, index=False)
+        print(f"Created populated CSV with MISSING_API_KEY status ({len(rows)} candidates): {OUTPUT_CSV}")
+        return
 
     # Select only thermally stable candidates (delta_E < 0 = more stable than LLZO)
     stable_mask = df['delta_E_vs_LLZO'] < 0 if 'delta_E_vs_LLZO' in df.columns else pd.Series([True] * len(df))
     stable_df = df[stable_mask].copy().reset_index(drop=True)
-    print(f"Candidates: {len(df)} total, {len(stable_df)} thermally stable (ΔE < 0) -> submitting to hull check")
+    print(f"Candidates: {len(df)} total, {len(stable_df)} thermally stable (delta_E < 0) -> submitting to hull check")
 
     results = []
     for _, row in stable_df.iterrows():

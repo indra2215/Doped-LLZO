@@ -1,4 +1,4 @@
-﻿import itertools
+import itertools
 import pandas as pd
 
 # Base dopant sets — no rare earth, no Zn, no Ti

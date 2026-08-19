@@ -51,7 +51,7 @@ RELAXED_DIR     = ROOT / "03_structures" / "relaxed"
 # FAST_MODE = True  →  1,000 steps (~2 ps),   local testing only
 # FAST_MODE = False →  25,000 steps (~50 ps),  minimum for Arrhenius fits
 # RECOMMENDED for production: 50,000+ steps (100+ ps) at 600/800/1000 K
-FAST_MODE    = True
+FAST_MODE    = False
 
 if FAST_MODE:
     MD_STEPS   = 1_000    # ~2 ps at 2 fs/step (FAST: local testing only, too short for Arrhenius)

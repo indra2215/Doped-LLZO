@@ -1,3 +1,21 @@
+import sys
+import pymatgen.entries.computed_entries
+import pymatgen.analysis.structure_matcher
+import pymatgen.entries.compatibility
+import pymatgen.entries.mixing_scheme
+
+sys.modules['pymatgen.core.entries'] = pymatgen.entries.computed_entries
+sys.modules['pymatgen.core.structure_matcher'] = pymatgen.analysis.structure_matcher
+sys.modules['pymatgen.analysis.compatibility'] = pymatgen.entries.compatibility
+sys.modules['pymatgen.entries.mixing_scheme'] = pymatgen.entries.mixing_scheme
+
+try:
+    from emmet.core.vasp.calculation import PotcarSpec
+    PotcarSpec.get = lambda self, k, d=None: getattr(self, k, d)
+    PotcarSpec.__getitem__ = lambda self, k: getattr(self, k)
+except Exception:
+    pass
+
 import pandas as pd
 from pathlib import Path
 from pymatgen.core import Structure
@@ -13,47 +31,49 @@ EVALUATED_FILE   = ROOT / "01_data" / "results"    / "evaluated_top_candidates.c
 RELAXED_DIR      = ROOT / "03_structures" / "relaxed"
 OUTPUT_FILE      = ROOT / "01_data" / "results"    / "thermodynamic_stability.csv"
 
-MP_API_KEY = os.environ.get("MP_API_KEY", None)
+MP_API_KEY = os.environ.get("MP_API_KEY", "nREzcJl7KZF5PZl1FIXCMbCSTbxQ55Ii")
 
+
+CHEMSYS_CACHE = {}
 
 def get_e_above_hull(structure: Structure) -> float:
     """
     Calculates the energy above the convex hull for a given structure using
-    the Materials Project phase diagram.
+    the Materials Project phase diagram (cached per chemical system).
 
     Args:
         structure (Structure): A pymatgen Structure with .energy attribute set.
 
     Returns:
-        float: Energy above hull in eV/atom. Returns float('inf') on error.
+        float: Energy above hull in eV/atom.
     """
     if not MP_API_KEY:
         raise ValueError("MP_API_KEY environment variable not set.")
 
-    with MPRester(MP_API_KEY) as mpr:
-        try:
-            chemsys = list(structure.composition.as_dict().keys())
-            entries = mpr.get_entries_in_chemsys(chemsys)
+    chemsys_tuple = tuple(sorted(structure.composition.as_dict().keys()))
 
-            if not entries:
-                print(f"  Warning: No MP entries found for {structure.composition.reduced_formula}")
-                raise RuntimeError(f"No Materials Project entries for {structure.composition.reduced_formula}")
+    if chemsys_tuple not in CHEMSYS_CACHE:
+        with MPRester(MP_API_KEY) as mpr:
+            try:
+                entries = mpr.get_entries_in_chemsys(list(chemsys_tuple))
+                if not entries:
+                    print(f"  Warning: No MP entries found for {structure.composition.reduced_formula}")
+                    raise RuntimeError(f"No Materials Project entries for {structure.composition.reduced_formula}")
+                CHEMSYS_CACHE[chemsys_tuple] = PhaseDiagram(entries)
+            except Exception as e:
+                print(f"  Error for {structure.composition.reduced_formula}: {e}")
+                raise RuntimeError(f"Hull calculation failed for {structure.composition.reduced_formula}: {e}") from e
 
-            pd_obj = PhaseDiagram(entries)
+    pd_obj = CHEMSYS_CACHE[chemsys_tuple]
 
-            from pymatgen.entries.computed_entries import ComputedEntry
-            our_entry = ComputedEntry(
-                composition=structure.composition,
-                energy=structure.energy,
-                entry_id=structure.composition.reduced_formula
-            )
+    from pymatgen.entries.computed_entries import ComputedEntry
+    our_entry = ComputedEntry(
+        composition=structure.composition,
+        energy=structure.energy,
+        entry_id=structure.composition.reduced_formula
+    )
 
-            e_above_hull = pd_obj.get_e_above_hull(our_entry)
-            return e_above_hull
-
-        except Exception as e:
-            print(f"  Error for {structure.composition.reduced_formula}: {e}")
-            raise RuntimeError(f"Hull calculation failed for {structure.composition.reduced_formula}: {e}") from e
+    return pd_obj.get_e_above_hull(our_entry)
 
 
 def main():
@@ -70,15 +90,16 @@ def main():
         print("  Run compositional_screening.py first.")
         return
 
-    if not MP_API_KEY:
-        print("Error: MP_API_KEY environment variable not found.")
-        print("  Set it with: $env:MP_API_KEY = 'your_key_here'")
-        pd.DataFrame(columns=['formula', 'e_above_hull_eV_atom']).to_csv(OUTPUT_FILE, index=False)
-        print(f"Created placeholder output: {OUTPUT_FILE}")
-        return
-
     top_candidates_df = pd.read_csv(CANDIDATES_FILE)
     f_col = 'formula' if 'formula' in top_candidates_df.columns else 'Formula'
+
+    if not MP_API_KEY:
+        print("Notice: MP_API_KEY environment variable not set.")
+        print("  Set it with: $env:MP_API_KEY = 'your_key_here' to compute live convex hull values.")
+        rows = [{'formula': row[f_col], 'e_above_hull_eV_atom': float('nan'), 'hull_status': 'MISSING_API_KEY', 'error': 'MP_API_KEY environment variable not set'} for _, row in top_candidates_df.iterrows()]
+        pd.DataFrame(rows).to_csv(OUTPUT_FILE, index=False)
+        print(f"Created populated CSV with MISSING_API_KEY status ({len(rows)} candidates): {OUTPUT_FILE}")
+        return
 
     # Load evaluated candidates for total energy
     evaluated_df = None
@@ -109,10 +130,12 @@ def main():
 
             e_hull = get_e_above_hull(relaxed_structure)
             results.append({'formula': formula, 'e_above_hull_eV_atom': e_hull, 'hull_status': 'OK', 'error': ''})
-
+            print(f"  --> {formula}: e_above_hull = {e_hull:.4f} eV/atom [OK]")
         except Exception as e:
-            print(f"  Failed to process {formula}: {e}")
+            print(f"  --> {formula} Failed: {e}")
             results.append({'formula': formula, 'e_above_hull_eV_atom': float('nan'), 'hull_status': 'ERROR', 'error': str(e)})
+
+        pd.DataFrame(results).to_csv(OUTPUT_FILE, index=False)
 
     stability_df = pd.DataFrame(results)
     if 'e_above_hull_eV_atom' in stability_df and not stability_df.empty:

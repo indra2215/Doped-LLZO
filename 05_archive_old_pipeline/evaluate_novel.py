@@ -1,4 +1,4 @@
-﻿import pandas as pd
+import pandas as pd
 from pathlib import Path
 from chgnet.model import CHGNet
 from chgnet.model.dynamics import CHGNetCalculator

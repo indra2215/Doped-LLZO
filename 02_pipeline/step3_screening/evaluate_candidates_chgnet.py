@@ -244,13 +244,14 @@ def rapid_surrogate_extraction():
             # Step 4: GPR conductivity
             sigma, sigma_err = gpr_predict(formula)
 
+            rel_cif_path = str(cif_path.relative_to(ROOT)).replace('\\', '/')
             results.append({
                 'formula':                formula,
                 'predicted_conductivity': sigma,
                 'predicted_sigma_err':    sigma_err,
                 'relaxed_energy_per_atom': energy_per_atom,
                 'relaxed_volume_per_atom': volume_per_atom,
-                'relaxed_cif_path':       str(cif_path),
+                'relaxed_cif_path':       rel_cif_path,
                 'relax_mode':             relax_mode,
             })
 
